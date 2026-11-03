@@ -1,5 +1,19 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+# Book Library App
+Mobile book library with a 3D rotunda interface.
+
+## Stack
+- React Native + Expo (TypeScript)
+- 3D: react-three-fiber / expo-three, ONE shared scene, two camera states (rotunda <-> shelf)
+- Backend: Supabase (auth + private storage)
+
+## Rules
+- Upload-based personal libraries only. Files are private per user.
+- No cross-user sharing or discovery features. Storage isolation via RLS.
+- Keep 3D code in /src/scene, reading/book management in /src/features.
+- Small commits, one feature per task.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
