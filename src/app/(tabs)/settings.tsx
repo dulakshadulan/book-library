@@ -1,9 +1,12 @@
+import { listBooks } from '@/db';
 import { runDatabaseSmokeTest } from '@/db/devCheck';
 import { useSQLiteContext } from 'expo-sqlite';
+import { useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
 
 export default function SettingsScreen() {
   const db = useSQLiteContext();
+  const [bookCount, setBookCount] = useState<number | null>(null);
 
   const handleDatabaseSmokeTest = async () => {
     try {
@@ -13,11 +16,27 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleLogBookCount = async () => {
+    try {
+      const books = await listBooks(db);
+      setBookCount(books.length);
+      console.log('[db] book count', books.length, books);
+    } catch (error) {
+      console.error('[db] book count failed', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Account and sync settings will live here.</Text>
-      {__DEV__ ? <Button title="Run DB smoke test" onPress={handleDatabaseSmokeTest} /> : null}
+      {__DEV__ ? (
+        <>
+          <Text style={styles.debug}>Books in DB: {bookCount ?? '—'}</Text>
+          <Button title="Log book count" onPress={handleLogBookCount} />
+          <Button title="Run DB smoke test" onPress={handleDatabaseSmokeTest} />
+        </>
+      ) : null}
     </View>
   );
 }
@@ -37,5 +56,9 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#6b7280',
     fontSize: 16,
+  },
+  debug: {
+    color: '#6b7280',
+    fontSize: 14,
   },
 });
