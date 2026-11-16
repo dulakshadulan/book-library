@@ -1,5 +1,7 @@
 import { listBooks } from '@/db';
 import { runDatabaseSmokeTest } from '@/db/devCheck';
+import { errorMessage } from '@/lib/errors';
+import { runFileSystemSmokeTest } from '@/lib/devCheck';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
@@ -7,6 +9,7 @@ import { Button, StyleSheet, Text, View } from 'react-native';
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const [bookCount, setBookCount] = useState<number | null>(null);
+  const [fileTestResult, setFileTestResult] = useState<string | null>(null);
 
   const handleDatabaseSmokeTest = async () => {
     try {
@@ -26,6 +29,17 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleFileSystemSmokeTest = async () => {
+    try {
+      const copiedUri = await runFileSystemSmokeTest();
+      setFileTestResult(`File copy OK: ${copiedUri}`);
+      console.log('[file smoke] ok', copiedUri);
+    } catch (error) {
+      setFileTestResult(`File copy failed: ${errorMessage(error)}`);
+      console.error('[file smoke] failed', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
@@ -35,6 +49,8 @@ export default function SettingsScreen() {
           <Text style={styles.debug}>Books in DB: {bookCount ?? '—'}</Text>
           <Button title="Log book count" onPress={handleLogBookCount} />
           <Button title="Run DB smoke test" onPress={handleDatabaseSmokeTest} />
+          <Button title="Test file copy" onPress={handleFileSystemSmokeTest} />
+          {fileTestResult ? <Text style={styles.debug}>{fileTestResult}</Text> : null}
         </>
       ) : null}
     </View>

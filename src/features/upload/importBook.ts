@@ -1,5 +1,6 @@
 import type { Book } from '@/db';
 import { addBook } from '@/db';
+import { errorMessage, StageError } from '@/lib/errors';
 import { copyIntoBooksDir, deleteBookFile } from '@/lib/files';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -25,14 +26,20 @@ export async function importBook(db: SQLiteDatabase, input: ImportBookInput): Pr
   const storedUri = await copyIntoBooksDir(input.pickedFile.uri);
 
   try {
-    return await addBook(db, {
+    const book = await addBook(db, {
       title,
       author: input.author.trim(),
       fileUri: storedUri,
       fileType: 'pdf',
     });
+
+    if (__DEV__) {
+      console.log('[upload] insertDb ok', book.id);
+    }
+
+    return book;
   } catch (error) {
     deleteBookFile(storedUri);
-    throw error;
+    throw new StageError('insertDb', errorMessage(error), error);
   }
 }

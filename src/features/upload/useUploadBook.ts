@@ -1,4 +1,5 @@
 import type { Book } from '@/db';
+import { errorMessage, StageError } from '@/lib/errors';
 import { titleFromFilename } from '@/lib/format';
 import * as DocumentPicker from 'expo-document-picker';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -17,6 +18,8 @@ export interface UploadBookState {
 }
 
 const PDF_MIME_TYPE = 'application/pdf';
+const SAVE_ERROR_MESSAGE = 'Could not save the book. Please try again.';
+const PICK_ERROR_MESSAGE = 'Could not open the file picker. Please try again.';
 
 const INITIAL_STATE: UploadBookState = {
   status: 'idle',
@@ -25,6 +28,10 @@ const INITIAL_STATE: UploadBookState = {
   author: '',
   error: null,
 };
+
+function stageFromError(error: unknown): string | null {
+  return error instanceof StageError ? error.stage : null;
+}
 
 function isPdf(asset: DocumentPicker.DocumentPickerAsset): boolean {
   return (
@@ -58,6 +65,10 @@ export function useUploadBook() {
 
       const asset = result.assets[0];
 
+      if (__DEV__) {
+        console.log('[upload] pick ok', asset?.uri, asset?.name, asset?.mimeType);
+      }
+
       if (!asset || !isPdf(asset)) {
         setState((previous) => ({
           ...previous,
@@ -78,11 +89,12 @@ export function useUploadBook() {
         author: '',
         error: null,
       });
-    } catch {
+    } catch (error) {
+      console.error('[upload] pick failed', error);
       setState((previous) => ({
         ...previous,
         status: 'error',
-        error: 'Could not open the file picker. Please try again.',
+        error: __DEV__ ? `pick failed: ${errorMessage(error)}` : PICK_ERROR_MESSAGE,
       }));
     }
   }, []);
@@ -123,11 +135,16 @@ export function useUploadBook() {
       const book = await importBook(db, { pickedFile, title, author });
       setState(INITIAL_STATE);
       return book;
-    } catch {
+    } catch (error) {
+      console.error('[upload] save failed', error);
+      const stage = stageFromError(error);
+
       setState((previous) => ({
         ...previous,
         status: 'error',
-        error: 'Could not save the book. Please try again.',
+        error: __DEV__
+          ? `save failed${stage ? ` at ${stage}` : ''}: ${errorMessage(error)}`
+          : SAVE_ERROR_MESSAGE,
       }));
       return null;
     }
