@@ -1,87 +1,77 @@
-import { getBook, type Book } from '@/db';
-import { errorMessage } from '@/lib/errors';
-import { useLocalSearchParams } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { PdfViewer } from '@/features/reader/PdfViewer';
+import { useReader } from '@/features/reader/useReader';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import type { PdfError } from 'react-native-pdf';
 
 export default function ReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const db = useSQLiteContext();
-  const [book, setBook] = useState<Book | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { book, loading, notFound, handleLoadComplete, handlePageChanged } = useReader(id);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadBook() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const loadedBook = await getBook(db, id);
-
-        if (active) {
-          setBook(loadedBook);
-        }
-      } catch (loadError) {
-        console.error('[reader] failed to load book', loadError);
-
-        if (active) {
-          setError(errorMessage(loadError));
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadBook();
-
-    return () => {
-      active = false;
-    };
-  }, [db, id]);
+  const handlePdfError = useCallback((error: PdfError) => {
+    console.error('[reader] pdf error', error);
+    setPdfError(error.message || 'Could not open this PDF.');
+  }, []);
 
   return (
-    <View style={styles.container}>
+    <>
+      <Stack.Screen options={{ title: book?.title ?? 'Reader' }} />
       {loading ? (
-        <ActivityIndicator color="#355070" size="large" />
-      ) : error ? (
-        <Text style={styles.error}>{error}</Text>
+        <View style={styles.centered}>
+          <ActivityIndicator color="#355070" size="large" />
+        </View>
+      ) : notFound || book === null ? (
+        <View style={styles.centered}>
+          <Text style={styles.notFound}>Book not found</Text>
+        </View>
       ) : (
-        <>
-          <Text style={styles.title}>{book?.title ?? 'Book not found'}</Text>
-          <Text style={styles.subtitle}>Book ID: {id}</Text>
-        </>
+        <View style={styles.container}>
+          {pdfError ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{pdfError}</Text>
+            </View>
+          ) : null}
+          <PdfViewer
+            fileUri={book.fileUri}
+            initialPage={book.lastPage}
+            onPageChanged={handlePageChanged}
+            onLoadComplete={handleLoadComplete}
+            onError={handlePdfError}
+          />
+        </View>
       )}
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#e5e7eb',
+    flex: 1,
+  },
+  centered: {
     alignItems: 'center',
     flex: 1,
-    gap: 8,
     justifyContent: 'center',
     padding: 24,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
+  notFound: {
+    color: '#111827',
+    fontSize: 20,
+    fontWeight: '600',
     textAlign: 'center',
   },
-  subtitle: {
-    color: '#6b7280',
+  errorBanner: {
+    backgroundColor: '#fef2f2',
+    borderBottomColor: '#fecaca',
+    borderBottomWidth: 1,
+    padding: 12,
+  },
+  errorText: {
+    color: '#b91c1c',
     fontSize: 14,
-    textAlign: 'center',
-  },
-  error: {
-    color: '#dc2626',
-    fontSize: 15,
     textAlign: 'center',
   },
 });
