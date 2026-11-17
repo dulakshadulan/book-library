@@ -2,6 +2,7 @@ import { listBooks } from '@/db';
 import { runDatabaseSmokeTest } from '@/db/devCheck';
 import { errorMessage } from '@/lib/errors';
 import { runFileSystemSmokeTest } from '@/lib/devCheck';
+import { router, type Href } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
@@ -54,6 +55,8 @@ export default function SettingsScreen() {
           <Button title="Log book count" onPress={handleLogBookCount} />
           <Button title="Run DB smoke test" onPress={handleDatabaseSmokeTest} />
           <Button title="Test file copy" onPress={handleFileSystemSmokeTest} />
+          <Button title="Open 3D spike" onPress={() => router.push('/spike-3d' as Href)} />
+          <Button title="Open PDF image spike" onPress={() => router.push('/spike-pdf' as Href)} />
           {fileTestResult ? <Text style={styles.debug}>{fileTestResult}</Text> : null}
         </>
       ) : null}
