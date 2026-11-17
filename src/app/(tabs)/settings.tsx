@@ -43,7 +43,11 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
-      <Text style={styles.subtitle}>Account and sync settings will live here.</Text>
+      <Text style={styles.subtitle}>
+        {__DEV__
+          ? 'Account and sync settings will live here.'
+          : 'Local library, sync not available yet'}
+      </Text>
       {__DEV__ ? (
         <>
           <Text style={styles.debug}>Books in DB: {bookCount ?? '—'}</Text>

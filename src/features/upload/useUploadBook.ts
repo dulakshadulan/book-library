@@ -150,16 +150,11 @@ export function useUploadBook() {
     }
   }, [db, state]);
 
-  const reset = useCallback(() => {
-    setState(INITIAL_STATE);
-  }, []);
-
   return {
     state,
     pickFile,
     setTitle,
     setAuthor,
     save,
-    reset,
   };
 }
